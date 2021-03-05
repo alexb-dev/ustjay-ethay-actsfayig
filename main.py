@@ -14,35 +14,36 @@
 # pig latin website, and print out the address for that piglatinized fact on the home page.
 
 import os
-
 import requests
 from flask import Flask
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-
-def get_fact():
+def get_fact() -> str:
+    """Get a random fact"""
 
     response = requests.get("http://unkno.com")
-
     soup = BeautifulSoup(response.content, "html.parser")
     facts = soup.find_all("div", id="content")
 
     return facts[0].getText()
 
-def get_piglatin_url(text: str):
-    payload={'input_text' : text}
-    x = requests.post('https://hidden-journey-62459.herokuapp.com/piglatinize/', data=payload)
-    return x.url
- 
+def get_piglatin_url(text: str) -> str:
+    """Get a link to piglatinized text"""
+    return requests.post('https://hidden-journey-62459.herokuapp.com/piglatinize/',
+                data={'input_text' : text}).url
 
 @app.route('/')
 def home():
-    sFact = get_fact()
-    url = get_piglatin_url(sFact)
-    print(sFact, url)
-    return f'<a href={url}>{url}</a>'
+    try:
+        a_fact = get_fact()
+        url = get_piglatin_url(a_fact)
+        print('Debug:', a_fact, url)
+        html = f'Link to piglatin random quote: <a href={url}>{url}</a>'
+    except requests.exceptions.ConnectionError as e:
+        html = '<h2>Connection error, check your network.<h2>'
+    return html
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 6787))
